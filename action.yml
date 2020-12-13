@@ -21,6 +21,9 @@ inputs:
     description: 'Flags for buildkitd daemon'
     default: '--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host'
     required: false
+  config:
+    description: 'Config for buildkitd daemon'
+    required: false
   install:
     description: 'Sets up docker build command as an alias to docker buildx'
     default: 'false'

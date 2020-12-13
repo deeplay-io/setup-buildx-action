@@ -2,11 +2,18 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as os from 'os';
 import * as path from 'path';
+import * as fs from 'fs';
+import {promisify} from 'util';
 import * as semver from 'semver';
 import * as buildx from './buildx';
 import * as context from './context';
 import * as mexec from './exec';
 import * as stateHelper from './state-helper';
+
+const writeFileAsync = promisify(fs.writeFile);
+const unlinkAsync = promisify(fs.unlink);
+
+const configPath = path.join(os.homedir(), 'buildkit-config.toml');
 
 async function run(): Promise<void> {
   try {
@@ -43,6 +50,10 @@ async function run(): Promise<void> {
           createArgs.push('--buildkitd-flags', inputs.buildkitdFlags);
         }
       }
+      if (inputs.config) {
+        await writeFileAsync(configPath, inputs.config);
+        createArgs.push('--config', configPath);
+      }
       if (inputs.use) {
         createArgs.push('--use');
       }
@@ -77,6 +88,13 @@ async function cleanup(): Promise<void> {
   if (stateHelper.builderName.length == 0) {
     return;
   }
+
+  const inputs: context.Inputs = await context.getInputs();
+
+  if (inputs.config) {
+    await unlinkAsync(configPath);
+  }
+
   await mexec.exec('docker', ['buildx', 'rm', `${stateHelper.builderName}`], false).then(res => {
     if (res.stderr != '' && !res.success) {
       core.warning(res.stderr);

@@ -513,11 +513,16 @@ const core = __importStar(__webpack_require__(186));
 const exec = __importStar(__webpack_require__(514));
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
+const fs = __importStar(__webpack_require__(747));
+const util_1 = __webpack_require__(669);
 const semver = __importStar(__webpack_require__(383));
 const buildx = __importStar(__webpack_require__(295));
 const context = __importStar(__webpack_require__(842));
 const mexec = __importStar(__webpack_require__(757));
 const stateHelper = __importStar(__webpack_require__(647));
+const writeFileAsync = util_1.promisify(fs.writeFile);
+const unlinkAsync = util_1.promisify(fs.unlink);
+const configPath = path.join(os.homedir(), 'buildkit-config.toml');
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -547,6 +552,10 @@ function run() {
                     if (inputs.buildkitdFlags) {
                         createArgs.push('--buildkitd-flags', inputs.buildkitdFlags);
                     }
+                }
+                if (inputs.config) {
+                    yield writeFileAsync(configPath, inputs.config);
+                    createArgs.push('--config', configPath);
                 }
                 if (inputs.use) {
                     createArgs.push('--use');
@@ -580,6 +589,10 @@ function cleanup() {
     return __awaiter(this, void 0, void 0, function* () {
         if (stateHelper.builderName.length == 0) {
             return;
+        }
+        const inputs = yield context.getInputs();
+        if (inputs.config) {
+            yield unlinkAsync(configPath);
         }
         yield mexec.exec('docker', ['buildx', 'rm', `${stateHelper.builderName}`], false).then(res => {
             if (res.stderr != '' && !res.success) {
@@ -7497,6 +7510,7 @@ function getInputs() {
             driverOpts: yield getInputList('driver-opts', true),
             buildkitdFlags: core.getInput('buildkitd-flags') ||
                 '--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host',
+            config: core.getInput('config'),
             install: /true/i.test(core.getInput('install')),
             use: /true/i.test(core.getInput('use')),
             endpoint: core.getInput('endpoint')

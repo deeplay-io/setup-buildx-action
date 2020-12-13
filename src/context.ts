@@ -9,6 +9,7 @@ export interface Inputs {
   driver: string;
   driverOpts: string[];
   buildkitdFlags: string;
+  config: string;
   install: boolean;
   use: boolean;
   endpoint: string;
@@ -22,6 +23,7 @@ export async function getInputs(): Promise<Inputs> {
     buildkitdFlags:
       core.getInput('buildkitd-flags') ||
       '--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host',
+    config: core.getInput('config'),
     install: /true/i.test(core.getInput('install')),
     use: /true/i.test(core.getInput('use')),
     endpoint: core.getInput('endpoint')
